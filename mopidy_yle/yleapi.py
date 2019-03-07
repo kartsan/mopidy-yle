@@ -189,6 +189,8 @@ class YLEAPI:
 
     def get_yle_media_url(self, program_id, media_id):
         encrypted_data = self.get_yle_json('{0}/media/playouts.json?program_id={1}&media_id={2}&protocol=PMD&app_id={3}&app_key={4}'.format(self.yle_url, program_id, media_id, self.__config['yle']['app_id'], self.__config['yle']['app_key']))
+        if not encrypted_data:
+            return None
         encrypted_url = encrypted_data['data'][0]['url']
         enc = base64.b64decode(encrypted_url)
         iv = enc[:16]
@@ -211,6 +213,11 @@ class YLEAPI:
         return None
     
     def get_yle_image_url(self, program_id):
-        image_id = YLEAPI.__tracks[program_id]['image']['id']
-        return '{0}/{1}.jpg'.format(self.yle_image_url, image_id)
+        url = None
+        try:
+            image_id = YLEAPI.__tracks[program_id]['image']['id']
+            url = '{0}/{1}.jpg'.format(self.yle_image_url, image_id)
+        except KeyError:
+            logger.warning('No image for id {0}'.format(program_id))
+        return url
     

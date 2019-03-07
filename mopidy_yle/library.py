@@ -57,7 +57,9 @@ class YLELibraryProvider(backend.LibraryProvider):
             if uri.startswith('yle:track:'):
                 item_url = uri.split(':')
                 program_id = item_url[2]
-                uri_images = [Image(uri=self.__yleapi.get_yle_image_url(program_id))]
+                image_url = self.__yleapi.get_yle_image_url(program_id)
+                if image_url:
+                    uri_images = [Image(uri=image_url)]
             result[uri] = uri_images or ()
         logger.info('IMAGES: {0}'.format(result))
         return result
