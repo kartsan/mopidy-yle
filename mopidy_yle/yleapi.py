@@ -4,6 +4,7 @@ import os
 import pykka
 import base64
 import requests
+import isodate
 from mopidy import models
 from mopidy.models import Ref, Artist, Album, Track
 from mopidy import httpclient
@@ -89,10 +90,14 @@ class YLEAPI:
             return result
         for item in categories:
             if 'broader' in item:
-                if item['broader']['id'] == radio_id:
-                    id = item['id']
-                    title = item['title'][self.__config['yle']['language']]
-                    result.append(Ref.directory(name=title, uri='yle:category:{0}'.format(id)))
+                id = item['id']
+                title = item['title'][self.__config['yle']['language']]
+                result.append(Ref.directory(name=title, uri='yle:category:{0}'.format(id)))
+#            if 'broader' in item:
+#                if item['broader']['id'] == radio_id:
+#                    id = item['id']
+#                    title = item['title'][self.__config['yle']['language']]
+#                    result.append(Ref.directory(name=title, uri='yle:category:{0}'.format(id)))
         return result
 
     def parse_items(self, items):
@@ -202,14 +207,17 @@ class YLEAPI:
     def get_yle_track_info(self, program_id, uri):
         if YLEAPI.__tracks:
             if program_id in YLEAPI.__tracks:
-                #                    logger.warning('ID: {0}'.format(YLEAPI.__tracks[id]['publicationEvent'][0]['media']))
+                #logger.warning('MEDIA: {0}'.format(YLEAPI.__tracks[program_id]['publicationEvent'][0]['media']))
                 item = YLEAPI.__tracks[program_id]
                 try:
                     title = item['title'][self.__config['yle']['language']]
                 except KeyError:
                     # Not in this language
                     return None
-                return models.Track(name=title, uri=uri)
+                media = item['publicationEvent'][0]['media']
+                duration = media['duration']
+                logger.info('LENGTH: {0}'.format(isodate.parse_duration(duration).microseconds))
+                return models.Track(name=title, uri=uri, length=1000 * isodate.parse_duration(duration).seconds)
         return None
     
     def get_yle_image_url(self, program_id):
