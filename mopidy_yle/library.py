@@ -4,7 +4,7 @@ import logging
 import os
 import pykka
 import mopidy_yle
-from mopidy.models import Image, Ref, Track, SearchResult
+from mopidy.models import Image, Ref, Track, Album, SearchResult
 from dateutil.parser import parse as parse_date
 from mopidy import httpclient
 from mopidy import backend
@@ -46,13 +46,16 @@ class YLELibraryProvider(backend.LibraryProvider):
     def search(self, query=None, uris=None, exact=False):
         for q in query:
             s = query[q][0]
-            results = []
+            tracks = []
+            albums = []
             data = self.__yleapi.get_yle_item(offset=0, query=s)
             for item in data:
                 if item.type == 'track':
-                    results.append(Track(name=item.name, uri=item.uri))
+                    tracks.append(Track(name=item.name, uri=item.uri))
+                elif item.type == 'album':
+                    albums.append(Album(name=item.name, uri=item.uri))
 
-        return SearchResult(tracks=results, uri=s)
+        return SearchResult(tracks=tracks, albums=albums, uri=s)
     
     def get_images(self, uris):
         result = {}
@@ -61,7 +64,13 @@ class YLELibraryProvider(backend.LibraryProvider):
             if uri.startswith('yle:track:'):
                 item_url = uri.split(':')
                 program_id = item_url[2]
-                image_url = self.__yleapi.get_yle_image_url(program_id)
+                image_url = self.__yleapi.get_yle_track_image_url(program_id)
+                if image_url:
+                    uri_images = [Image(uri=image_url)]
+            if uri.startswith('yle:series:'):
+                item_url = uri.split(':')
+                id = item_url[2]
+                image_url = self.__yleapi.get_yle_album_image_url(program_id)
                 if image_url:
                     uri_images = [Image(uri=image_url)]
             result[uri] = uri_images or ()
@@ -73,4 +82,8 @@ class YLELibraryProvider(backend.LibraryProvider):
             item_url = uri.split(':')
             program_id = item_url[2]
             result.append(self.__yleapi.get_yle_track_info(program_id, uri))
+        if uri.startswith('yle:series:'):
+            item_url = uri.split(':')
+            program_id = item_url[2]
+            result = self.__yleapi.get_yle_series_info(program_id, uri)
         return result

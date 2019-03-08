@@ -20,6 +20,7 @@ class YLEAPI:
     radioCategory = '5-200'
     __categories = []
     __tracks = {}
+    __albums = {}
     
     def __init__(self, config):
         self.__config = config
@@ -129,6 +130,7 @@ class YLEAPI:
                     # Not for this language
                     continue
                 albums[id] = Ref.album(name=title, uri='yle:series:{0}'.format(id))
+                YLEAPI.__albums[id] = item
         # TODO: Useless; move to up
         for i in albums:
             result.append(albums[i])
@@ -174,8 +176,26 @@ class YLEAPI:
                 duration = media['duration']
                 return models.Track(name=title, uri=uri, length=1000 * isodate.parse_duration(duration).seconds)
         return None
+
+    def get_yle_series_info(self, program_id, uri):
+        if YLEAPI.__albums:
+            if program_id in YLEAPI.__albums:
+                item = YLEAPI.__albums[program_id]
+                try:
+                    title = item['title'][self.__config['yle']['language']]
+                except KeyError:
+                    # Not in this language
+                    return None
+                tracks = []
+                data = self.get_yle_item(offset=0, series=program_id)
+                for item in data:
+                    if item.type == 'track':
+                        tracks.append(models.Track(name=item.name, uri=item.uri))
+
+                return tracks
+        return None
     
-    def get_yle_image_url(self, program_id):
+    def get_yle_track_image_url(self, program_id):
         url = None
         try:
             image_id = YLEAPI.__tracks[program_id]['image']['id']
@@ -184,3 +204,11 @@ class YLEAPI:
             logger.warning('No image for id {0}'.format(program_id))
         return url
     
+    def get_yle_album_image_url(self, program_id):
+        url = None
+        try:
+            image_id = YLEAPI.__albums[program_id]['partOfSeries']['coverImage']['id']
+            url = '{0}/{1}.jpg'.format(self.yle_image_url, image_id)
+        except KeyError:
+            logger.warning('No image for id {0}'.format(program_id))
+        return url
