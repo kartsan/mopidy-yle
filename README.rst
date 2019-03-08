@@ -22,10 +22,8 @@ Installation
 
 Install by running::
 
-    pip install Mopidy-YLE
-
-Or, if available, install the Debian/Ubuntu package from `apt.mopidy.com
-<http://apt.mopidy.com/>`_.
+    git clone https://github.com/kartsan/mopidy-yle.git
+    sudo python setup.py install
 
 
 Configuration
@@ -78,6 +76,12 @@ Credits
 
 Changelog
 =========
+
+v0.2.0 (Initial release)
+----------------------------------------
+
+- First public release: search, browse and playing media works.
+
 
 v0.1.0 (UNRELEASED)
 ----------------------------------------
