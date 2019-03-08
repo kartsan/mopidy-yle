@@ -4,8 +4,7 @@ import logging
 import os
 import pykka
 import mopidy_yle
-from mopidy.models import Image
-from mopidy.models import Ref
+from mopidy.models import Image, Ref, Track, SearchResult
 from dateutil.parser import parse as parse_date
 from mopidy import httpclient
 from mopidy import backend
@@ -48,6 +47,18 @@ class YLELibraryProvider(backend.LibraryProvider):
             return self.__yleapi.get_yle_item(offset=0, series=id)
         
         return []
+
+    def search(self, query=None, uris=None, exact=False):
+        for q in query:
+            s = query[q][0]
+            results = []
+            data = self.__yleapi.get_yle_item(offset=0, query=s)
+            for item in data:
+                if item.type == 'track':
+                    results.append(Track(name=item.name, uri=item.uri))
+                logger.warning('ITEM: {0}'.format(item))
+
+        return SearchResult(tracks=results, uri=s)
     
     def get_images(self, uris):
         result = {}
