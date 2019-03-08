@@ -104,10 +104,8 @@ class YLEAPI:
         result = []
         albums = {}
         tracks = {}
-  #      logger.warning('TRACKS: {0}'.format(items))
         for item in items:
             id = item['id']
-#            logger.warning('ID: {0}'.format(item['image']))
             if 'publicationEvent' in item:
                 try:
                     title = item['title'][self.__config['yle']['language']]
@@ -124,7 +122,6 @@ class YLEAPI:
                     YLEAPI.__tracks[id] = item
                     continue
             if 'partOfSeries' in item:
-#                logger.warning('ITEM1: {0}'.format(item['partOfSeries']))
                 id = item['partOfSeries']['id']
                 try:
                     title = item['partOfSeries']['title'][self.__config['yle']['language']]
@@ -132,52 +129,12 @@ class YLEAPI:
                     # Not for this language
                     continue
                 albums[id] = Ref.album(name=title, uri='yle:series:{0}'.format(id))
-#            else:
-#                logger.warning('IS')
-#                try:
-#                    title = item['title'][self.__config['yle']['language']]
-#                except KeyError:
-#                    # Not for this language
-#                    continue
-#                tracks[id] = Ref.track(name=title, uri='yle:track:{0}'.format(id))
-#                YLEAPI.__tracks[id] = item
-                
+        # TODO: Useless; move to up
         for i in albums:
             result.append(albums[i])
-#            logger.warning('ALBUM: {0}'.format(i))
         for i in tracks:
             result.append(tracks[i])
-#            logger.warning('TRACK: {0}'.format(id))
-            
-        # if 'partOfSeries' in items:
-        #     # This is an 'album'
-        #     logger.warning('ALBUM2: {0}'.format(items['partOfSeries']))
-        #     logger.warning(items['id'])
-        #     logger.warning(items['title'])
-        #     continue
-        #     id = items['id']
-        #     try:
-        #         title = items['title'][self.__config['yle']['language']]
-        #     except KeyError:
-        #         # Not for this language
-        #         continue
-        #     result.append(Ref.album(name=title, uri='yle:album:{0}'.format(id)))
-        # else:
-        #     # This is a 'track'
-        #     logger.warning(items['id'])
-        #     logger.warning(items['title'])
-        #     id = items['id']
-        #     continue
-        #     try:
-        #         title = items['title'][self.__config['yle']['language']]
-        #     except KeyError:
-        #         # Not for this language
-        #         continue
-        #     for event in items['publicationEvent']:
-        #         logger.warning(event)
-        #         result.append(Ref.track(name=title, uri='yle:track:{0}'.format(id)))
-        #         YLEAPI.__tracks[id] = items
-        #         continue
+
         return result
     
     def get_yle_sort_method(self):
@@ -207,7 +164,6 @@ class YLEAPI:
     def get_yle_track_info(self, program_id, uri):
         if YLEAPI.__tracks:
             if program_id in YLEAPI.__tracks:
-                #logger.warning('MEDIA: {0}'.format(YLEAPI.__tracks[program_id]['publicationEvent'][0]['media']))
                 item = YLEAPI.__tracks[program_id]
                 try:
                     title = item['title'][self.__config['yle']['language']]
@@ -216,7 +172,6 @@ class YLEAPI:
                     return None
                 media = item['publicationEvent'][0]['media']
                 duration = media['duration']
-                logger.info('LENGTH: {0}'.format(isodate.parse_duration(duration).microseconds))
                 return models.Track(name=title, uri=uri, length=1000 * isodate.parse_duration(duration).seconds)
         return None
     
