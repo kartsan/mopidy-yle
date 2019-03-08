@@ -20,14 +20,11 @@ class YLELibraryProvider(backend.LibraryProvider):
 
     def __init__(self, config, backend):
         super(YLELibraryProvider, self).__init__(backend)
-        logger.info('YLE init.')
         self.__config = config
         self.__backend = backend
         self.__yleapi = YLEAPI(config)
         
     def browse(self, uri):
-        logger.warning('YLE browse() {0}'.format(uri))
-
         if not uri.startswith('yle:'):
             return []
 
@@ -37,13 +34,11 @@ class YLELibraryProvider(backend.LibraryProvider):
         if uri.startswith('yle:category:'):
             item_url = uri.split(':')
             id = item_url[2]
-            logger.warning('SUB')
             return self.__yleapi.get_yle_item(offset=0, category=id)
 
         if uri.startswith('yle:series:'):
             item_url = uri.split(':')
             id = item_url[2]
-            logger.warning('SERIES: {0}'.format(id))
             return self.__yleapi.get_yle_item(offset=0, series=id)
         
         return []
@@ -56,13 +51,11 @@ class YLELibraryProvider(backend.LibraryProvider):
             for item in data:
                 if item.type == 'track':
                     results.append(Track(name=item.name, uri=item.uri))
-                logger.warning('ITEM: {0}'.format(item))
 
         return SearchResult(tracks=results, uri=s)
     
     def get_images(self, uris):
         result = {}
-        logger.warning('URIS: {0}'.format(uris))
         for uri in uris:
             uri_images = None
             if uri.startswith('yle:track:'):
@@ -72,12 +65,10 @@ class YLELibraryProvider(backend.LibraryProvider):
                 if image_url:
                     uri_images = [Image(uri=image_url)]
             result[uri] = uri_images or ()
-        logger.info('IMAGES: {0}'.format(result))
         return result
 
     def lookup(self, uri):
         result = []
-        logger.warning('LOOKUP: {0}'.format(uri))
         if uri.startswith('yle:track:'):
             item_url = uri.split(':')
             program_id = item_url[2]

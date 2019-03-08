@@ -22,7 +22,7 @@ class Extension(ext.Extension):
 
     def get_config_schema(self):
         schema = super(Extension, self).get_config_schema()
-        # TODO: Comment in and edit, or remove entirely
+        # TODO: Add missing and do error checking
         schema['app_id'] = config.String()
         schema['app_key'] = config.String()
         schema['secret_key'] = config.String()

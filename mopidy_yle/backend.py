@@ -13,11 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class YLEBackend(pykka.ThreadingActor, backend.Backend):
-    uri_schemes = [
-        'yle',
-        'yle+http',
-        'yle+https'
-    ]
+    uri_schemes = [ 'yle' ]
     
     def __init__(self, config, audio):
         super(YLEBackend, self).__init__()
