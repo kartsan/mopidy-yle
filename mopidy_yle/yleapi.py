@@ -5,8 +5,6 @@ import pykka
 import base64
 import requests
 import isodate
-from mopidy import models
-from mopidy.models import Ref, Artist, Album, Track
 from mopidy import httpclient
 from Crypto.Cipher import AES
 from . import Extension
@@ -50,6 +48,7 @@ class YLEAPI:
             YLEAPI.__categories = self.parse_yle_categories(data['data'])
         return YLEAPI.__categories
 
+    # TODO: Move this out of API source
     def get_requests_session(self):
         proxy = httpclient.format_proxy(self.__config['proxy'])
         full_user_agent = httpclient.format_user_agent('%s/%s' % (self.__dist_name, self.__version))
@@ -61,7 +60,7 @@ class YLEAPI:
         return session
 
     def get_yle_item(self, offset, query=None, category=None, limit=None, series=None):
-        parameters = ['availability=ondemand', 'mediaobject=audio']
+        parameters = ['availability=ondemand', 'mediaobject=audio', 'type=radiocontent']
         if category:
             parameters.append('category={0}'.format(category))
         if query:
@@ -93,7 +92,8 @@ class YLEAPI:
             if 'broader' in item:
                 id = item['id']
                 title = item['title'][self.__config['yle']['language']]
-                result.append(Ref.directory(name=title, uri='yle:category:{0}'.format(id)))
+                result.append({'name': title, 'uri': 'yle:category:{0}'.format(id)})
+#                result.append(Ref.directory(name=title, uri='yle:category:{0}'.format(id)))
 #            if 'broader' in item:
 #                if item['broader']['id'] == radio_id:
 #                    id = item['id']
@@ -105,6 +105,8 @@ class YLEAPI:
         result = []
         albums = {}
         tracks = {}
+        albumcount = 0
+        trackcount = 0
         for item in items:
             id = item['id']
             if 'publicationEvent' in item:
@@ -113,14 +115,27 @@ class YLEAPI:
                 except KeyError:
                     # Not for this language
                     continue
+                album = None
+                try:
+                    series = item['partOfSeries']
+                except KeyError:
+                    series = None
+                if series:
+                    album_id = series['id']
+                    try:
+                        title = series['title'][self.__config['yle']['language']]
+                    except KeyError:
+                        logger.warning('KEY ERROR: {0}'.format(title))
+                    album = { 'type': 'album', 'name': title, 'uri': 'yle:series:{0}'.format(album_id) }
                 event = item['publicationEvent'][0]
                 if event['temporalStatus'] == 'currently' and event['type'] == 'OnDemandPublication':
                     media_id = event['media']['id']
                     if not event['media']['type'] == 'AudioObject':
                         logger.warning('No audio available in the program')
                         continue
-                    tracks[id] = Ref.track(name=title, uri='yle:track:{0}:{1}'.format(id, media_id))
+                    tracks[id] = { 'type': 'track', 'name': title, 'uri': 'yle:track:{0}:{1}'.format(id, media_id), 'album': album }
                     YLEAPI.__tracks[id] = item
+                    trackcount += 1
                     continue
             if 'partOfSeries' in item:
                 id = item['partOfSeries']['id']
@@ -129,15 +144,11 @@ class YLEAPI:
                 except KeyError:
                     # Not for this language
                     continue
-                albums[id] = Ref.album(name=title, uri='yle:series:{0}'.format(id))
+                albums[id] = { 'type': 'album', 'name': title, 'uri': 'yle:series:{0}'.format(id) }
                 YLEAPI.__albums[id] = item
-        # TODO: Useless; move to up
-        for i in albums:
-            result.append(albums[i])
-        for i in tracks:
-            result.append(tracks[i])
+                albumcount += 1
 
-        return result
+        return albums, tracks
     
     def get_yle_sort_method(self):
         sort_type = self.__config['yle']['sort_type']
@@ -174,8 +185,8 @@ class YLEAPI:
                     return None
                 media = item['publicationEvent'][0]['media']
                 duration = media['duration']
-                return models.Track(name=title, uri=uri, length=1000 * isodate.parse_duration(duration).seconds)
-        return None
+                return { 'type': 'track', 'name': title, 'uri': uri, 'length': 1000 * isodate.parse_duration(duration).seconds }
+        return []
 
     def get_yle_series_info(self, program_id, uri):
         if YLEAPI.__albums:
@@ -186,20 +197,15 @@ class YLEAPI:
                 except KeyError:
                     # Not in this language
                     return None
-                tracks = []
-                data = self.get_yle_item(offset=0, series=program_id)
-                for item in data:
-                    if item.type == 'track':
-                        tracks.append(models.Track(name=item.name, uri=item.uri))
-
-                return tracks
+                albums, tracks = self.get_yle_item(offset=0, series=program_id)
+                # TODO: Handle this
         return None
     
     def get_yle_track_image_url(self, program_id):
         url = None
         try:
             image_id = YLEAPI.__tracks[program_id]['image']['id']
-            url = '{0}/{1}.jpg'.format(self.yle_image_url, image_id)
+            url = '{0}/{1}.png'.format(self.yle_image_url, image_id)
         except KeyError:
             logger.warning('No image for id {0}'.format(program_id))
         return url

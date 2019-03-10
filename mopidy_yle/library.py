@@ -25,40 +25,62 @@ class YLELibraryProvider(backend.LibraryProvider):
         self.__yleapi = YLEAPI(config)
         
     def browse(self, uri):
+        result = []
         if not uri.startswith('yle:'):
-            return []
+            return result
 
         if uri == 'yle:root':
-            return self.__yleapi.get_yle_categories()
+            categories = self.__yleapi.get_yle_categories()
+            for item in categories:
+                result.append(Ref.directory(name=item['name'], uri=item['uri']))
+            return result
 
         if uri.startswith('yle:category:'):
             item_url = uri.split(':')
             id = item_url[2]
-            return self.__yleapi.get_yle_item(offset=0, category=id)
+            albums, tracks = self.__yleapi.get_yle_item(offset=0, category=id, limit=100)
+            result = []
+            for i in albums:
+                if albums[i]['type'] == 'album':
+                    result.append(Ref.album(name=albums[i]['name'], uri=albums[i]['uri']))
+            return result
 
         if uri.startswith('yle:series:'):
             item_url = uri.split(':')
             id = item_url[2]
-            return self.__yleapi.get_yle_item(offset=0, series=id)
+            albums, tracks = self.__yleapi.get_yle_item(offset=0, series=id, limit=100)
+            result = []
+            for i in tracks:
+                result.append(Ref.track(name=tracks[i]['name'], uri=tracks[i]['uri']))
+            for i in albums:
+                result.append(Ref.track(name=albums[i]['name'], uri=albums[i]['uri']))
+            return result
         
-        return []
+        return result
 
     def search(self, query=None, uris=None, exact=False):
+        tracklist = []
+        albumlist = []
         for q in query:
             s = query[q][0]
-            tracks = []
-            albums = []
-            data = self.__yleapi.get_yle_item(offset=0, query=s)
-            for item in data:
-                if item.type == 'track':
-                    tracks.append(Track(name=item.name, uri=item.uri))
-                elif item.type == 'album':
-                    albums.append(Album(name=item.name, uri=item.uri))
-
-        return SearchResult(tracks=tracks, albums=albums, uri=s)
+            logger.warning('SEARCH: {0}({1})'.format(s, q))
+            albums, tracks = self.__yleapi.get_yle_item(offset=0, query=s, limit=100)
+            for item in tracks:
+                logger.warning('ITEM: {0}'.format(tracks[item]))
+                album = None
+                if 'album' in tracks[item] and tracks[item]['album']:
+                    album = Album(name=tracks[item]['album']['name'], uri=tracks[item]['album']['uri'])
+                    logger.warning('ALBUM: {0}'.format(album))
+                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], album=album))
+                else:
+                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri']))
+            for item in albums:
+                albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri']))
+        return SearchResult(tracks=tracklist, albums=albumlist, uri='yle:search:{0}'.format(query))
     
     def get_images(self, uris):
         result = {}
+        logger.warning('IMAGE URIS: {0}'.format(uris))
         for uri in uris:
             uri_images = None
             if uri.startswith('yle:track:'):
@@ -74,6 +96,7 @@ class YLELibraryProvider(backend.LibraryProvider):
                 if image_url:
                     uri_images = [Image(uri=image_url)]
             result[uri] = uri_images or ()
+        logger.warning('IMAGE RESULT: {0}'.format(result))
         return result
 
     def lookup(self, uri):
@@ -81,9 +104,11 @@ class YLELibraryProvider(backend.LibraryProvider):
         if uri.startswith('yle:track:'):
             item_url = uri.split(':')
             program_id = item_url[2]
-            result.append(self.__yleapi.get_yle_track_info(program_id, uri))
-        if uri.startswith('yle:series:'):
-            item_url = uri.split(':')
-            program_id = item_url[2]
-            result = self.__yleapi.get_yle_series_info(program_id, uri)
+            track = self.__yleapi.get_yle_track_info(program_id, uri)
+            result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length']))
+#        if uri.startswith('yle:series:'):
+#            item_url = uri.split(':')
+#            program_id = item_url[2]
+#            album = self.__yleapi.get_yle_series_info(program_id, uri)
+#            result.append(models.Album(name=album['name'], uri=album['uri'], length=album['length']))
         return result

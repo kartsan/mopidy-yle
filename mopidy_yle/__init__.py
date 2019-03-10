@@ -4,6 +4,7 @@ import logging
 import os
 
 from mopidy import config, ext
+from mopidy import httpclient
 
 __version__ = '0.2.0'
 
