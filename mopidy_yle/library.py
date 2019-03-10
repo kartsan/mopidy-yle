@@ -4,7 +4,7 @@ import logging
 import os
 import pykka
 import mopidy_yle
-from mopidy.models import Image, Ref, Track, Album, SearchResult
+from mopidy.models import Image, Ref, Track, Album, Artist, SearchResult
 from dateutil.parser import parse as parse_date
 from mopidy import httpclient
 from mopidy import backend
@@ -52,8 +52,8 @@ class YLELibraryProvider(backend.LibraryProvider):
             result = []
             for i in tracks:
                 result.append(Ref.track(name=tracks[i]['name'], uri=tracks[i]['uri']))
-            for i in albums:
-                result.append(Ref.track(name=albums[i]['name'], uri=albums[i]['uri']))
+#            for i in albums:
+#                result.append(Ref.album(name=albums[i]['name'], uri=albums[i]['uri']))
             return result
         
         return result
@@ -61,26 +61,25 @@ class YLELibraryProvider(backend.LibraryProvider):
     def search(self, query=None, uris=None, exact=False):
         tracklist = []
         albumlist = []
+        artist = Artist(name='YLE Areena', uri='yle:artist:yleareena')
         for q in query:
             s = query[q][0]
-            logger.warning('SEARCH: {0}({1})'.format(s, q))
             albums, tracks = self.__yleapi.get_yle_item(offset=0, query=s, limit=100)
-            for item in tracks:
-                logger.warning('ITEM: {0}'.format(tracks[item]))
-                album = None
-                if 'album' in tracks[item] and tracks[item]['album']:
-                    album = Album(name=tracks[item]['album']['name'], uri=tracks[item]['album']['uri'])
-                    logger.warning('ALBUM: {0}'.format(album))
-                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], album=album))
-                else:
-                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri']))
+            if q != 'album':
+                for item in tracks:
+                    if 'album' in tracks[item] and tracks[item]['album']:
+                        album = Album(name=tracks[item]['album']['name'],
+                                      uri=tracks[item]['album']['uri'],
+                                      artists=[artist])
+                        tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], artists=[artist], album=album))
+                    else:
+                        tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], artists=[artist]))
             for item in albums:
-                albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri']))
+                albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], artists=[artist]))
         return SearchResult(tracks=tracklist, albums=albumlist, uri='yle:search:{0}'.format(query))
     
     def get_images(self, uris):
         result = {}
-        logger.warning('IMAGE URIS: {0}'.format(uris))
         for uri in uris:
             uri_images = None
             if uri.startswith('yle:track:'):
@@ -96,19 +95,23 @@ class YLELibraryProvider(backend.LibraryProvider):
                 if image_url:
                     uri_images = [Image(uri=image_url)]
             result[uri] = uri_images or ()
-        logger.warning('IMAGE RESULT: {0}'.format(result))
         return result
 
     def lookup(self, uri):
         result = []
+#        if uri.startswith('yle:artist:'):
         if uri.startswith('yle:track:'):
             item_url = uri.split(':')
             program_id = item_url[2]
             track = self.__yleapi.get_yle_track_info(program_id, uri)
-            result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length']))
-#        if uri.startswith('yle:series:'):
-#            item_url = uri.split(':')
-#            program_id = item_url[2]
-#            album = self.__yleapi.get_yle_series_info(program_id, uri)
-#            result.append(models.Album(name=album['name'], uri=album['uri'], length=album['length']))
+            artist = models.Artist(name=track['artist'], uri='yle:artist:yleareena') 
+            result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], artists=[artist], date='2008-12-26'))
+        if uri.startswith('yle:series:'):
+            item_url = uri.split(':')
+            program_id = item_url[2]
+            tracks = self.__yleapi.get_yle_series_info(program_id, uri)
+            for track in tracks:
+                artist = models.Artist(name=track['artist'], uri='yle:artist:yleareena')
+                album = models.Album(name=track['album']['name'], uri=track['album']['uri'])
+                result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], artists=[artist], date='2008-12-26', album=album))
         return result
