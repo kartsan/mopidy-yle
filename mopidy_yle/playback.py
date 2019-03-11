@@ -21,5 +21,6 @@ class YLEPlaybackProvider(backend.PlaybackProvider):
         item_url = uri.split(':')
         program_id = item_url[2]
         media_id = item_url[3]
+        self.__yleapi.yle_report(program_id, media_id)
         return self.__yleapi.get_yle_media_url(program_id, media_id)
 

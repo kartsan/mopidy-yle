@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 class YLEAPI:
     yle_url = 'https://external.api.yle.fi/v1'
     yle_image_url = 'http://images.cdn.yle.fi/image/upload'
+    yle_report_url = 'https://external.api.yle.fi/v1/tracking/streamstart'
     unplayableCategories = ['5-162', '5-164', '5-226', '5-228']
     radioCategory = '5-200'
     __categories = []
@@ -180,6 +181,9 @@ class YLEAPI:
         decrypted_url = cipher.decrypt(enc[16:])
         url = decrypted_url[:-ord(decrypted_url[len(decrypted_url)-1:])]
         return url
+
+    def yle_report(self, program_id, media_id):
+        self.get_yle_json('{0}?program_id={1}&media_id={2}&app_id={3}&app_key={4}'.format(self.yle_report_url, program_id, media_id, self.__config['yle']['app_id'], self.__config['yle']['app_key']))
 
     def get_yle_track_info(self, program_id, uri):
         if YLEAPI.__tracks:
