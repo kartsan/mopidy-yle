@@ -81,7 +81,6 @@ class YLEAPI:
         result = []
         radio_id = None
         for item in categories:
-            unplayable = False
             if 'broader' not in item:
                 if item['key'] == 'radio':
                     radio_id = item['id']
@@ -93,12 +92,6 @@ class YLEAPI:
                 id = item['id']
                 title = item['title'][self.__config['yle']['language']]
                 result.append({'name': title, 'uri': 'yle:category:{0}'.format(id)})
-#                result.append(Ref.directory(name=title, uri='yle:category:{0}'.format(id)))
-#            if 'broader' in item:
-#                if item['broader']['id'] == radio_id:
-#                    id = item['id']
-#                    title = item['title'][self.__config['yle']['language']]
-#                    result.append(Ref.directory(name=title, uri='yle:category:{0}'.format(id)))
         return result
 
     def parse_items(self, items):
@@ -132,7 +125,6 @@ class YLEAPI:
                               'uri': 'yle:series:{0}'.format(album_id),
                               'artist': 'YLE Areena' }
                 event = item['publicationEvent'][0]
-#                logger.warning('ID: {0}'.format(item))
                 if event['temporalStatus'] == 'currently' and event['type'] == 'OnDemandPublication':
                     media_id = event['media']['id']
                     duration = event['media']['duration']
@@ -141,6 +133,7 @@ class YLEAPI:
                         continue
                     item['length'] = length = 1000 * isodate.parse_duration(duration).seconds
                     tracks[id] = { 'type': 'track', 'name': title,
+                                   'id': id,
                                    'uri': 'yle:track:{0}:{1}'.format(id, media_id),
                                    'album': album,
                                    'length': length,

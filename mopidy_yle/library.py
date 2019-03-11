@@ -104,6 +104,8 @@ class YLELibraryProvider(backend.LibraryProvider):
             item_url = uri.split(':')
             program_id = item_url[2]
             track = self.__yleapi.get_yle_track_info(program_id, uri)
+            if not track:
+                return result
             artist = models.Artist(name=track['artist'], uri='yle:artist:yleareena') 
             result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], artists=[artist], date='2008-12-26'))
         if uri.startswith('yle:series:'):
