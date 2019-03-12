@@ -161,14 +161,18 @@ class YLEAPI:
                     continue
             if 'partOfSeries' in item:
                 id = item['partOfSeries']['id']
+                image = None
                 try:
                     title = item['partOfSeries']['title'][self.__config['yle']['language']]
                 except KeyError:
                     # Not for this language
                     continue
+                if 'coverImage' in item['partOfSeries']:
+                    image = self.get_yle_album_image_url(id)
                 albums[id] = { 'type': 'album',
                                'name': title,
                                'uri': 'yle:series:{0}'.format(id),
+                               'image' : image,
                                'artist' : 'YLE Areena' }
                 YLEAPI.__albums[id] = item
                 albumcount += 1
