@@ -47,7 +47,23 @@ class YLEAPI:
         if not YLEAPI.__categories:
             data = self.get_yle_json('{0}/programs/categories.json?key=radio&app_id={1}&app_key={2}'.format(self.yle_url, self.__config['yle']['app_id'], self.__config['yle']['app_key']))
             YLEAPI.__categories = self.parse_yle_categories(data['data'])
-        return YLEAPI.__categories
+
+    def get_yle_category(self, id):
+        result = []
+        self.get_yle_categories()
+        if id == 'root':
+            for item in YLEAPI.__categories:
+                if 'broader' not in item:
+                    if item['key'] == 'radio':
+                        id = item['id']
+                        break
+        if not id:
+            return result
+        for item in YLEAPI.__categories:
+            if 'broader' in item:
+                if item['broader']['id'] == id:
+                    result.append(item)
+        return result
 
     # TODO: Move this out of API source
     def get_requests_session(self):
@@ -80,19 +96,20 @@ class YLEAPI:
 
     def parse_yle_categories(self, categories):
         result = []
-        radio_id = None
         for item in categories:
+            id = item['id']
+            title = item['title'][self.__config['yle']['language']]
             if 'broader' not in item:
-                if item['key'] == 'radio':
-                    radio_id = item['id']
-                    break
-        if not radio_id:
-            return result
-        for item in categories:
-            if 'broader' in item:
-                id = item['id']
-                title = item['title'][self.__config['yle']['language']]
-                result.append({'name': title, 'uri': 'yle:category:{0}'.format(id)})
+                result.append({'name': title,
+                               'id': id,
+                               'uri': 'yle:category:{0}'.format(id),
+                               'key': item['key']})
+            else:
+                result.append({'name': title,
+                               'id': id,
+                               'uri': 'yle:category:{0}'.format(id),
+                               'broader': item['broader'],
+                               'key': item['key']})
         return result
 
     def parse_items(self, items):

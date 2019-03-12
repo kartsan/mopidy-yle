@@ -30,7 +30,7 @@ class YLELibraryProvider(backend.LibraryProvider):
             return result
 
         if uri == 'yle:root':
-            categories = self.__yleapi.get_yle_categories()
+            categories = self.__yleapi.get_yle_category('root')
             for item in categories:
                 result.append(Ref.directory(name=item['name'], uri=item['uri']))
             return result
@@ -38,10 +38,14 @@ class YLELibraryProvider(backend.LibraryProvider):
         if uri.startswith('yle:category:'):
             item_url = uri.split(':')
             id = item_url[2]
-            albums, tracks = self.__yleapi.get_yle_item(offset=0, category=id, limit=100)
-            result = []
-            for i in albums:
-                if albums[i]['type'] == 'album':
+            categories = self.__yleapi.get_yle_category(id)
+            if categories:
+                for item in categories:
+                    result.append(Ref.directory(name=item['name'], uri=item['uri']))
+            else:
+                albums, tracks = self.__yleapi.get_yle_item(offset=0, category=id, limit=100)
+                result = []
+                for i in albums:
                     result.append(Ref.album(name=albums[i]['name'], uri=albums[i]['uri']))
             return result
 
