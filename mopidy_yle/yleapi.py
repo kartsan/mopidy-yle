@@ -142,23 +142,23 @@ class YLEAPI:
                               'name': title,
                               'uri': 'yle:series:{0}'.format(album_id),
                               'artist': 'YLE Areena' }
-                event = item['publicationEvent'][0]
-                if event['temporalStatus'] == 'currently' and event['type'] == 'OnDemandPublication':
-                    media_id = event['media']['id']
-                    duration = event['media']['duration']
-                    if not event['media']['type'] == 'AudioObject':
-                        logger.warning('No audio available in the program')
+                for event in item['publicationEvent']:
+                    if event['temporalStatus'] == 'currently' and event['type'] == 'OnDemandPublication':
+                        media_id = event['media']['id']
+                        duration = event['media']['duration']
+                        if not event['media']['type'] == 'AudioObject':
+                            logger.warning('No audio available in the program')
+                            continue
+                        item['length'] = length = 1000 * isodate.parse_duration(duration).seconds
+                        tracks[id] = { 'type': 'track', 'name': title,
+                                       'id': id,
+                                       'uri': 'yle:track:{0}:{1}'.format(id, media_id),
+                                       'album': album,
+                                       'length': length,
+                                       'artist' : 'YLE Areena' }
+                        YLEAPI.__tracks[id] = item
+                        trackcount += 1
                         continue
-                    item['length'] = length = 1000 * isodate.parse_duration(duration).seconds
-                    tracks[id] = { 'type': 'track', 'name': title,
-                                   'id': id,
-                                   'uri': 'yle:track:{0}:{1}'.format(id, media_id),
-                                   'album': album,
-                                   'length': length,
-                                   'artist' : 'YLE Areena' }
-                    YLEAPI.__tracks[id] = item
-                    trackcount += 1
-                    continue
             if 'partOfSeries' in item:
                 id = item['partOfSeries']['id']
                 image = None
