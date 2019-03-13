@@ -168,7 +168,7 @@ class YLEAPI:
                     # Not for this language
                     continue
                 if 'coverImage' in item['partOfSeries']:
-                    image = self.get_yle_album_image_url(id)
+                    image = self.get_yle_image_url(item['partOfSeries']['coverImage']['id'])
                 albums[id] = { 'type': 'album',
                                'name': title,
                                'uri': 'yle:series:{0}'.format(id),
@@ -237,7 +237,7 @@ class YLEAPI:
             album_name = tracks[item]['album']['name']
             album_id = tracks[item]['album']['id']
             album_uri = tracks[item]['album']['uri']
-            album_image = self.get_yle_album_image_url(album_id)
+            album_image = self.get_yle_image_url(album_id)
             album = { 'type': 'album', 'name': album_name, 'uri': album_uri, 'image': album_image }
             tracklist.append({ 'type': 'track',
                                'name': title,
@@ -247,20 +247,10 @@ class YLEAPI:
                                'artist': 'YLE Areena' })
         return tracklist
     
-    def get_yle_track_image_url(self, program_id):
+    def get_yle_image_url(self, program_id):
         url = None
         try:
-            image_id = YLEAPI.__tracks[program_id]['image']['id']
-            url = '{0}/{1}.png'.format(self.yle_image_url, image_id)
-        except KeyError:
-            logger.warning('No image for id {0}'.format(program_id))
-        return url
-    
-    def get_yle_album_image_url(self, program_id):
-        url = None
-        try:
-            image_id = YLEAPI.__albums[program_id]['partOfSeries']['coverImage']['id']
-            url = '{0}/{1}.jpg'.format(self.yle_image_url, image_id)
+            url = '{0}/{1}.png'.format(self.yle_image_url, program_id)
         except KeyError:
             logger.warning('No image for id {0}'.format(program_id))
         return url
