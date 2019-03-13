@@ -80,7 +80,10 @@ class YLELibraryProvider(backend.LibraryProvider):
                         tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], artists=[artist]))
             for item in albums:
                 image = albums[item]['image']
-                albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], images=[image], artists=[artist]))
+                if image:
+                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], images=[image], artists=[artist]))
+                else:
+                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], artists=[artist]))
         return SearchResult(tracks=tracklist, albums=albumlist, uri='yle:search:{0}'.format(query))
     
     def get_images(self, uris):
