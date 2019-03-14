@@ -150,7 +150,8 @@ class YLEAPI:
                     continue
                 if 'partOfSeries' in item:
                     album_id = self.fill_album(item)
-                    albums[album_id] = YLEAPI.__albums[album_id]
+                    if album_id:
+                        albums[album_id] = YLEAPI.__albums[album_id]
                 for event in item['publicationEvent']:
                     if event['temporalStatus'] == 'currently' and event['type'] == 'OnDemandPublication':
                         media_id = event['media']['id']
@@ -202,6 +203,12 @@ class YLEAPI:
 
         return {}
 
+    def get_yle_track(self, track_id):
+        return YLEAPI.__tracks[track_id]
+
+    def get_yle_album(self, album_id):
+        return YLEAPI.__albums[album_id]
+
     def get_yle_series_info(self, series_id):
         if YLEAPI.__albums[series_id]:
             if YLEAPI.__albums[series_id]['tracks']:
@@ -211,18 +218,11 @@ class YLEAPI:
         tracklist = []
         albums, tracks = self.get_yle_item(offset=0, series=series_id)
         for item in tracks:
-            try:
-                title = tracks[item]['name']
-            except KeyError:
-                # Not in this language
-                return tracklist
-            uri = tracks[item]['uri']
-            length = tracks[item]['length']
-            album_id = tracks[item]['album']
+            track = tracks[item]
+            album_id = track['album']
             if album_id:
                 album = albums[album_id]
-            track = tracks[item]
-            track['album'] = album
+                track['album'] = album
             YLEAPI.__albums[series_id]['tracks'].append(track)
             tracklist.append(track)
 
