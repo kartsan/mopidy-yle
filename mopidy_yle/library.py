@@ -71,9 +71,10 @@ class YLELibraryProvider(backend.LibraryProvider):
             albums, tracks = self.__yleapi.get_yle_item(offset=0, query=s, limit=100)
             if q != 'album':
                 for item in tracks:
-                    if 'album' in tracks[item] and tracks[item]['album']:
-                        album = Album(name=tracks[item]['album']['name'],
-                                      uri=tracks[item]['album']['uri'],
+                    if tracks[item]['album']:
+                        album_item = albums[tracks[item]['album']]
+                        album = Album(name=album_item['name'],
+                                      uri=album_item['uri'],
                                       artists=[artist])
                         tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], artists=[artist], album=album))
                     else:
@@ -119,7 +120,7 @@ class YLELibraryProvider(backend.LibraryProvider):
         if uri.startswith('yle:series:'):
             item_url = uri.split(':')
             program_id = item_url[2]
-            tracks = self.__yleapi.get_yle_series_info(program_id, uri)
+            tracks = self.__yleapi.get_yle_series_info(program_id)
             for track in tracks:
                 artist = models.Artist(name=track['artist'], uri='yle:artist:yleareena')
                 album = models.Album(name=track['album']['name'], uri=track['album']['uri'])

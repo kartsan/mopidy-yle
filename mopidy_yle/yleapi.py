@@ -112,8 +112,30 @@ class YLEAPI:
                                'key': item['key']})
         return result
 
+    def fill_album(self, item):
+        id = item['partOfSeries']['id']
+        if id in YLEAPI.__albums:
+            return id
+        image = None
+        try:
+            title = item['partOfSeries']['title'][self.__config['yle']['language']]
+        except KeyError:
+            # Not for this language
+            return None
+        if 'coverImage' in item['partOfSeries']:
+            image = self.get_yle_image_url(item['partOfSeries']['coverImage']['id'])
+        YLEAPI.__albums[id] = { 'type': 'album',
+                                'id': id,
+                                'name': title,
+                                'uri': 'yle:series:{0}'.format(id),
+                                'image' : image,
+                                'tracks' : [],
+                                'artist' : 'YLE Areena' }
+        return id
+
     def parse_items(self, items):
         result = []
+        album_id = None
         albums = {}
         tracks = {}
         albumcount = 0
@@ -126,22 +148,9 @@ class YLEAPI:
                 except KeyError:
                     # Not for this language
                     continue
-                album = None
-                try:
-                    series = item['partOfSeries']
-                except KeyError:
-                    series = None
-                if series:
-                    album_id = series['id']
-                    try:
-                        title = series['title'][self.__config['yle']['language']]
-                    except KeyError:
-                        logger.warning('KEY ERROR: {0}'.format(title))
-                    album = { 'type': 'album',
-                              'id': album_id,
-                              'name': title,
-                              'uri': 'yle:series:{0}'.format(album_id),
-                              'artist': 'YLE Areena' }
+                if 'partOfSeries' in item:
+                    album_id = self.fill_album(item)
+                    albums[album_id] = YLEAPI.__albums[album_id]
                 for event in item['publicationEvent']:
                     if event['temporalStatus'] == 'currently' and event['type'] == 'OnDemandPublication':
                         media_id = event['media']['id']
@@ -153,32 +162,12 @@ class YLEAPI:
                         tracks[id] = { 'type': 'track', 'name': title,
                                        'id': id,
                                        'uri': 'yle:track:{0}:{1}'.format(id, media_id),
-                                       'album': album,
+                                       'album': album_id,
                                        'length': length,
                                        'artist' : 'YLE Areena' }
-                        YLEAPI.__tracks[id] = item
-                        trackcount += 1
-                        continue
-            if 'partOfSeries' in item:
-                id = item['partOfSeries']['id']
-                image = None
-                try:
-                    title = item['partOfSeries']['title'][self.__config['yle']['language']]
-                except KeyError:
-                    # Not for this language
-                    continue
-                if 'coverImage' in item['partOfSeries']:
-                    image = self.get_yle_image_url(item['partOfSeries']['coverImage']['id'])
-                albums[id] = { 'type': 'album',
-                               'name': title,
-                               'uri': 'yle:series:{0}'.format(id),
-                               'image' : image,
-                               'artist' : 'YLE Areena' }
-                YLEAPI.__albums[id] = item
-                albumcount += 1
-
+                        YLEAPI.__tracks[id] = tracks[id]
         return albums, tracks
-    
+
     def get_yle_sort_method(self):
         sort_type = self.__config['yle']['sort_type']
         sort_method = self.__config['yle']['sort_method']
@@ -209,23 +198,18 @@ class YLEAPI:
     def get_yle_track_info(self, program_id, uri):
         if YLEAPI.__tracks:
             if program_id in YLEAPI.__tracks:
-                item = YLEAPI.__tracks[program_id]
-                try:
-                    title = item['title'][self.__config['yle']['language']]
-                except KeyError:
-                    # Not in this language
-                    return {}
-                length = item['length']
-                return { 'type': 'track',
-                         'name': title,
-                         'uri': uri,
-                         'length': length,
-                         'artist': 'YLE Areena' }
+                return YLEAPI.__tracks[program_id]
+
         return {}
 
-    def get_yle_series_info(self, series_id, uri):
-        albums, tracks = self.get_yle_item(offset=0, series=series_id)
+    def get_yle_series_info(self, series_id):
+        if YLEAPI.__albums[series_id]:
+            if YLEAPI.__albums[series_id]['tracks']:
+                # Use cached tracks
+                return YLEAPI.__albums[series_id]['tracks']
+        album = {}
         tracklist = []
+        albums, tracks = self.get_yle_item(offset=0, series=series_id)
         for item in tracks:
             try:
                 title = tracks[item]['name']
@@ -234,17 +218,14 @@ class YLEAPI:
                 return tracklist
             uri = tracks[item]['uri']
             length = tracks[item]['length']
-            album_name = tracks[item]['album']['name']
-            album_id = tracks[item]['album']['id']
-            album_uri = tracks[item]['album']['uri']
-            album_image = self.get_yle_image_url(album_id)
-            album = { 'type': 'album', 'name': album_name, 'uri': album_uri, 'image': album_image }
-            tracklist.append({ 'type': 'track',
-                               'name': title,
-                               'uri': uri,
-                               'length': length,
-                               'album': album,
-                               'artist': 'YLE Areena' })
+            album_id = tracks[item]['album']
+            if album_id:
+                album = albums[album_id]
+            track = tracks[item]
+            track['album'] = album
+            YLEAPI.__albums[series_id]['tracks'].append(track)
+            tracklist.append(track)
+
         return tracklist
     
     def get_yle_image_url(self, program_id):
