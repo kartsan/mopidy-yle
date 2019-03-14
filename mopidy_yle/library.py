@@ -35,7 +35,7 @@ class YLELibraryProvider(backend.LibraryProvider):
                 result.append(Ref.directory(name=item['name'], uri=item['uri']))
             return result
 
-        if uri.startswith('yle:category:'):
+        elif uri.startswith('yle:category:'):
             item_url = uri.split(':')
             id = item_url[2]
             categories = self.__yleapi.get_yle_category(id)
@@ -49,7 +49,7 @@ class YLELibraryProvider(backend.LibraryProvider):
                     result.append(Ref.album(name=albums[i]['name'], uri=albums[i]['uri']))
             return result
 
-        if uri.startswith('yle:series:'):
+        elif uri.startswith('yle:series:'):
             item_url = uri.split(':')
             id = item_url[2]
             tracks = self.__yleapi.get_yle_series_info(id)
@@ -89,16 +89,18 @@ class YLELibraryProvider(backend.LibraryProvider):
         result = {}
         for uri in uris:
             uri_images = None
-            if uri.startswith('yle:track:'):
+            if uri.startswith('yle:artist:yleareena'):
+                uri_images = [Image(uri=self.__yleapi.get_yle_logo())]
+            elif uri.startswith('yle:track:'):
                 item_url = uri.split(':')
                 program_id = item_url[2]
-                image_url = self.__yleapi.get_yle_track_image_url(program_id)
+                image_url = self.__yleapi.get_yle_image_url(program_id)
                 if image_url:
                     uri_images = [Image(uri=image_url)]
-            if uri.startswith('yle:series:'):
+            elif uri.startswith('yle:series:'):
                 item_url = uri.split(':')
                 id = item_url[2]
-                image_url = self.__yleapi.get_yle_album_image_url(program_id)
+                image_url = self.__yleapi.get_yle_image_url(program_id)
                 if image_url:
                     uri_images = [Image(uri=image_url)]
             result[uri] = uri_images or ()
@@ -106,11 +108,12 @@ class YLELibraryProvider(backend.LibraryProvider):
 
     def lookup(self, uri):
         result = []
-#        if uri.startswith('yle:artist:'):
+# TODO: handle this:
+#        if uri.startswith('yle:artist:yleareena'):
         if uri.startswith('yle:track:'):
             item_url = uri.split(':')
             program_id = item_url[2]
-            track = self.__yleapi.get_yle_track_info(program_id, uri)
+            track = self.__yleapi.get_yle_track_info(program_id)
             if not track:
                 return result
             artist = models.Artist(name=track['artist'], uri='yle:artist:yleareena') 
@@ -120,7 +123,7 @@ class YLELibraryProvider(backend.LibraryProvider):
                               uri=track['album']['uri'],
                               artists=[artist])
             result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], artists=[artist], album=album))
-        if uri.startswith('yle:series:'):
+        elif uri.startswith('yle:series:'):
             item_url = uri.split(':')
             program_id = item_url[2]
             tracks = self.__yleapi.get_yle_series_info(program_id)

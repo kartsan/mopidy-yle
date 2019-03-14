@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class YLEAPI:
     yle_url = 'https://external.api.yle.fi/v1'
-    yle_image_url = 'http://images.cdn.yle.fi/image/upload'
+    yle_image_url = 'http://images.cdn.yle.fi/image/upload/w_320,h_320,c_fit'
     yle_report_url = 'https://external.api.yle.fi/v1/tracking/streamstart'
     unplayableCategories = ['5-162', '5-164', '5-226', '5-228']
     radioCategory = '5-200'
@@ -196,7 +196,7 @@ class YLEAPI:
     def yle_report(self, program_id, media_id):
         self.get_yle_json('{0}?program_id={1}&media_id={2}&app_id={3}&app_key={4}'.format(self.yle_report_url, program_id, media_id, self.__config['yle']['app_id'], self.__config['yle']['app_key']))
 
-    def get_yle_track_info(self, program_id, uri):
+    def get_yle_track_info(self, program_id):
         if YLEAPI.__tracks:
             if program_id in YLEAPI.__tracks:
                 return YLEAPI.__tracks[program_id]
@@ -210,7 +210,7 @@ class YLEAPI:
         return YLEAPI.__albums[album_id]
 
     def get_yle_series_info(self, series_id):
-        if YLEAPI.__albums[series_id]:
+        if series_id in YLEAPI.__albums:
             if YLEAPI.__albums[series_id]['tracks']:
                 # Use cached tracks
                 return YLEAPI.__albums[series_id]['tracks']
@@ -225,7 +225,6 @@ class YLEAPI:
                 track['album'] = album
             YLEAPI.__albums[series_id]['tracks'].append(track)
             tracklist.append(track)
-
         return tracklist
     
     def get_yle_image_url(self, program_id):
@@ -235,3 +234,7 @@ class YLEAPI:
         except KeyError:
             logger.warning('No image for id {0}'.format(program_id))
         return url
+
+    def get_yle_logo(self):
+        return '{0}/{1}.png'.format(self.yle_image_url, 'v1445529201/17-2043254eef129bf7ac.jpg')
+
