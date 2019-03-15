@@ -8,6 +8,16 @@ from mopidy import httpclient
 
 __version__ = '0.2.0'
 
+SORT_FIELDS = ['%s:%s' % (f, o) for o in ('asc', 'desc') for f in (
+    'playcount.6h',
+    'playcount.24h',
+    'playcount.week',
+    'playcount.month',
+    'publication.starttime',
+    'publication.endtime',
+    'updated'
+)]
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,10 +36,9 @@ class Extension(ext.Extension):
         # TODO: Add missing and do error checking
         schema['app_id'] = config.String()
         schema['app_key'] = config.String()
-        schema['secret_key'] = config.String()
-        schema['sort_method'] = config.String() 
-        schema['sort_type'] = config.String()   # asc (default) or desc
-        schema['language'] = config.String()   # asc (default) or desc
+        schema['secret_key'] = config.String(optional=True)
+        schema['sort_method'] = config.String(choices=SORT_FIELDS, optional=True)
+        schema['language'] = config.String(optional=True)
         
         return schema
 

@@ -86,7 +86,7 @@ class YLEAPI:
             parameters.append('limit={0}'.format(limit))
         if series:
             parameters.append('series=' + series)
-        parameters.append('order=' + self.get_yle_sort_method())
+        parameters.append('order=' + self.__config['yle']['sort_method'])
         parameters.append('offset=' + str(offset))
         parameters.append('app_id=' + self.__config['yle']['app_id'])
         parameters.append('app_key=' + self.__config['yle']['app_key'])
@@ -168,26 +168,20 @@ class YLEAPI:
                         YLEAPI.__tracks[id] = tracks[id]
         return albums, tracks
 
-    def get_yle_sort_method(self):
-        sort_type = self.__config['yle']['sort_type']
-        sort_method = self.__config['yle']['sort_method']
-        
-        if not sort_type in ['asc', 'desc']:
-            raise ValueError('Unknown sort type {0}'.format(sort_type))
-        
-        if not sort_method in [ 'playcount.6h', 'playcount.24h', 'playcount.week', 'playcount.month', 'publication.starttime', 'publication.endtime', 'updated' ]:
-            raise ValueError('Unknown sort method {0}'.format(sort_method))
-
-        return '{0}:{1}'.format(sort_method, sort_type)
-
     def get_yle_media_url(self, program_id, media_id):
-        encrypted_data = self.get_yle_json('{0}/media/playouts.json?program_id={1}&media_id={2}&protocol=PMD&app_id={3}&app_key={4}'.format(self.yle_url, program_id, media_id, self.__config['yle']['app_id'], self.__config['yle']['app_key']))
+        app_id = self.__config['yle']['app_id']
+        app_key = self.__config['yle']['app_key']
+        secret_key = self.__config['yle']['secret_key']
+        if not secret_key:
+            logger.warning('Add secret_key to your configuration to play media.')
+            return None
+        encrypted_data = self.get_yle_json('{0}/media/playouts.json?program_id={1}&media_id={2}&protocol=PMD&app_id={3}&app_key={4}'.format(self.yle_url, program_id, media_id, app_id, app_key))
         if not encrypted_data:
             return None
         encrypted_url = encrypted_data['data'][0]['url']
         enc = base64.b64decode(encrypted_url)
         iv = enc[:16]
-        cipher = AES.new(self.__config['yle']['secret_key'], AES.MODE_CBC, iv)
+        cipher = AES.new(secret_key, AES.MODE_CBC, iv)
         decrypted_url = cipher.decrypt(enc[16:])
         url = decrypted_url[:-ord(decrypted_url[len(decrypted_url)-1:])]
         return url
