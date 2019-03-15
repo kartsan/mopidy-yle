@@ -4,7 +4,7 @@ import logging
 import os
 import pykka
 import mopidy_yle
-from mopidy.models import Image, Ref, Track, Album, Artist, SearchResult
+from mopidy.models import Image, Ref, Track, Album, SearchResult
 from dateutil.parser import parse as parse_date
 from mopidy import httpclient
 from mopidy import backend
@@ -63,7 +63,6 @@ class YLELibraryProvider(backend.LibraryProvider):
     def search(self, query=None, uris=None, exact=False):
         tracklist = []
         albumlist = []
-        artist = Artist(name='YLE Areena', uri='yle:artist:yleareena')
         for q in query:
             s = query[q][0]
             albums, tracks = self.__yleapi.get_yle_item(offset=0, query=s, limit=100)
@@ -73,25 +72,22 @@ class YLELibraryProvider(backend.LibraryProvider):
                     if tracks[item]['album']:
                         album_item = albums[tracks[item]['album']]
                         album = Album(name=album_item['name'],
-                                      uri=album_item['uri'],
-                                      artists=[artist])
-                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], artists=[artist], album=album))
+                                      uri=album_item['uri'])
+                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], album=album))
             for item in albums:
                 image = Image()
                 if albums[item]['image']:
                     image = albums[item]['image']
-                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], images=[image], artists=[artist]))
+                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], images=[image]))
                 else:
-                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], artists=[artist]))
+                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri']))
         return SearchResult(tracks=tracklist, albums=albumlist, uri='yle:search:{0}'.format(query))
     
     def get_images(self, uris):
         result = {}
         for uri in uris:
             uri_images = None
-            if uri.startswith('yle:artist:yleareena'):
-                uri_images = [Image(uri=self.__yleapi.get_yle_logo())]
-            elif uri.startswith('yle:track:'):
+            if uri.startswith('yle:track:'):
                 item_url = uri.split(':')
                 program_id = item_url[2]
                 image_url = self.__yleapi.get_yle_image_url(program_id)
@@ -108,27 +104,22 @@ class YLELibraryProvider(backend.LibraryProvider):
 
     def lookup(self, uri):
         result = []
-# TODO: handle this:
-#        if uri.startswith('yle:artist:yleareena'):
         if uri.startswith('yle:track:'):
             item_url = uri.split(':')
             program_id = item_url[2]
             track = self.__yleapi.get_yle_track_info(program_id)
             if not track:
                 return result
-            artist = models.Artist(name=track['artist'], uri='yle:artist:yleareena') 
             album = Album()
             if track['album']:
                 album = Album(name=track['album']['name'],
-                              uri=track['album']['uri'],
-                              artists=[artist])
-            result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], artists=[artist], album=album))
+                              uri=track['album']['uri'])
+            result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
         elif uri.startswith('yle:series:'):
             item_url = uri.split(':')
             program_id = item_url[2]
             tracks = self.__yleapi.get_yle_series_info(program_id)
             for track in tracks:
-                artist = models.Artist(name=track['artist'], uri='yle:artist:yleareena')
                 album = models.Album(name=track['album']['name'], uri=track['album']['uri'])
-                result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], artists=[artist], album=album))
+                result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
         return result

@@ -129,8 +129,7 @@ class YLEAPI:
                                 'name': title,
                                 'uri': 'yle:series:{0}'.format(id),
                                 'image' : image,
-                                'tracks' : [],
-                                'artist' : 'YLE Areena' }
+                                'tracks' : [] }
         return id
 
     def parse_items(self, items):
@@ -155,17 +154,17 @@ class YLEAPI:
                 for event in item['publicationEvent']:
                     if event['temporalStatus'] == 'currently' and event['type'] == 'OnDemandPublication':
                         media_id = event['media']['id']
+                        media_type = event['media']['type']
                         duration = event['media']['duration']
-                        if not event['media']['type'] == 'AudioObject':
+                        if not media_type == 'AudioObject':
                             logger.warning('No audio available in the program')
                             continue
-                        item['length'] = length = 1000 * isodate.parse_duration(duration).seconds
+                        length = 1000 * isodate.parse_duration(duration).seconds
                         tracks[id] = { 'type': 'track', 'name': title,
                                        'id': id,
                                        'uri': 'yle:track:{0}:{1}'.format(id, media_id),
                                        'album': album_id,
-                                       'length': length,
-                                       'artist' : 'YLE Areena' }
+                                       'length': length }
                         YLEAPI.__tracks[id] = tracks[id]
         return albums, tracks
 
