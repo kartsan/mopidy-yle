@@ -125,6 +125,10 @@ class YLELibraryProvider(backend.LibraryProvider):
                 image_url = self.__yleapi.get_yle_image_url(program_id)
                 if image_url:
                     uri_images = [Image(uri=image_url)]
+            elif uri.startswith('yle:liveradio:'):
+                image_url = self.__yleapi.get_yle_logo()
+                if image_url:
+                    uri_images = [Image(uri=image_url)]
             result[uri] = uri_images or ()
         return result
 
@@ -133,7 +137,10 @@ class YLELibraryProvider(backend.LibraryProvider):
         if uri.startswith('yle:liveradio'):
             item_url = uri.split(':')
             program_id = item_url[2]
-            result.append(models.Track(name=LIVERADIO[program_id], uri=uri))
+            album = Album(name='YLE live',
+                          uri=uri,
+                          images=[self.__yleapi.get_yle_logo()])
+            result.append(models.Track(name=LIVERADIO[program_id], uri=uri, album=album))
         elif uri.startswith('yle:track:'):
             item_url = uri.split(':')
             program_id = item_url[2]

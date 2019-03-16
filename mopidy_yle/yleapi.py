@@ -116,7 +116,7 @@ class YLEAPI:
         id = item['partOfSeries']['id']
         if id in YLEAPI.__albums:
             return id
-        image = None
+        image = self.get_yle_logo()
         try:
             title = item['partOfSeries']['title'][self.__config['yle']['language']]
         except KeyError:
@@ -221,13 +221,8 @@ class YLEAPI:
         return tracklist
     
     def get_yle_image_url(self, program_id):
-        url = None
-        try:
-            url = '{0}/{1}.png'.format(self.yle_image_url, program_id)
-        except KeyError:
-            logger.warning('No image for id {0}'.format(program_id))
-        return url
+        return '{0}/{1}.png'.format(self.yle_image_url, program_id)
 
     def get_yle_logo(self):
-        return '{0}/{1}.png'.format(self.yle_image_url, 'v1445529201/17-2043254eef129bf7ac.jpg')
+        return '{0}/{1}.png'.format(self.yle_image_url, 'v1445529201/17-2043254eef129bf7ac')
 
