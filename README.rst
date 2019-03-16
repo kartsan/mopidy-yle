@@ -49,7 +49,7 @@ The following configuration values are available:
 
 - ``yle/secret_key``: Your personal YLE secret key. It is used to decode media URIs. Required if any media is about to be played.
 
-- ``yle/sort_method``: Sorting method to use in searches. Syntax is a tuple ``sort_method``:``sort_type``. Available types are: ``asc`` and ``desc``. Available methods are: ``playcount.6h``, ``playcount.24h``, ``playcount.week``, ``playcount.month``, ``publication.starttime``, ``publication.endtime`` and ``updated``. Defaults to ``publication.starttime``. Defaults to ``playcount.24h:asc``
+- ``yle/sort_method``: Sorting method to use in searches. Syntax is a tuple ``sort_method``:``sort_type``. Available types are: ``asc`` and ``desc``. Available methods are: ``playcount.6h``, ``playcount.24h``, ``playcount.week``, ``playcount.month``, ``publication.starttime``, ``publication.endtime`` and ``updated``. Defaults to ``playcount.24h:asc``
 
 - ``yle/language``: Accepted language in the search results. Available languages are: ``fi`` (Finnish), ``sv`` (Swedish) and ``en`` (English). Defaults to ``fi``.
 
