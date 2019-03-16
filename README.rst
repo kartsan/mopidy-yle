@@ -74,6 +74,16 @@ Credits
 Changelog
 =========
 
+v0.3.0 (2019-03-16)
+----------------------------------------
+
+- Added YLE live radio stations
+- Image support
+- More caching of YLE data
+- Browse only radio categories
+- Code simplified
+- Added more error checking
+
 v0.2.0 (Initial release)
 ----------------------------------------
 
