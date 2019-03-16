@@ -15,9 +15,25 @@ from .yleapi import YLEAPI
 logger = logging.getLogger(__name__)
 
 LIVERADIO = {
-    'radio1': 'YLE radio 1',
-    'puhe': 'YLE puhe',
-    'suomi': 'YLE Suomi'
+    'liveyleradio1': 'YLE Radio 1',
+    'liveradiopuhe': 'YLE Puhe',
+    'liveradiosuomi': 'YLE Radio Suomi',
+    'a_radiohame': u'YLE H\xe4me',
+    'a_keskisuomi': u'YLE Jyv\xe4skyl\xe4',
+    'a_kainuu': 'YLE Kajaani',
+    'a_perameri': 'YLE Kemi',
+    'a_keskipohjanmaa': 'YLE Kokkola',
+    'a_kymenlaakso': 'YLE Kotka',
+    'a_radiosavo': 'YLE Kuopio',
+    'a_lahdenradio': 'YLE Lahti',
+    'a_etelakarjala': 'YLE Lappeenranta',
+    'a_etelasavo': 'YLE Mikkeli',
+    'a_ouluradio': 'YLE Oulu',
+    'a_pohjanmaa': 'YLE Pohjanmaa',
+    'a_satakunta': 'YLE Pori',
+    'a_lapinradio': 'YLE Rovaniemi',
+    'a_tampere': 'YLE Tampere',
+    'a_turunradio' : 'YLE Turku'
 }
 
 class YLELibraryProvider(backend.LibraryProvider):
@@ -47,7 +63,7 @@ class YLELibraryProvider(backend.LibraryProvider):
             result = []
             if id == 'live':
                 for station in LIVERADIO:
-                    result.append(Ref.track(name=LIVERADIO[station], uri='yle:track:{0}'.format(station)))
+                    result.append(Ref.track(name=LIVERADIO[station], uri='yle:liveradio:{0}'.format(station)))
             else:
                 categories = self.__yleapi.get_yle_category(id)
                 if categories:
@@ -114,27 +130,28 @@ class YLELibraryProvider(backend.LibraryProvider):
 
     def lookup(self, uri):
         result = []
-        if uri.startswith('yle:track:'):
+        if uri.startswith('yle:liveradio'):
             item_url = uri.split(':')
             program_id = item_url[2]
-            if program_id in LIVERADIO:
-                result.append(models.Track(name=LIVERADIO[program_id], uri='yle:track:{0}'.format(program_id)))
-            else:
-                track = self.__yleapi.get_yle_track_info(program_id)
-                if not track:
-                    return result
-                album = Album()
-                if track['album']:
-                    album = Album(name=track['album']['name'],
-                                  uri=track['album']['uri'],
-                                  images=[track['album']['image']])
-                    result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
-                elif uri.startswith('yle:series:'):
-                    item_url = uri.split(':')
-                    program_id = item_url[2]
-                    tracks = self.__yleapi.get_yle_series_info(program_id)
-                    for track in tracks:
-                        album = models.Album(name=track['album']['name'], uri=track['album']['uri'])
-                        result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
+            result.append(models.Track(name=LIVERADIO[program_id], uri=uri))
+        elif uri.startswith('yle:track:'):
+            item_url = uri.split(':')
+            program_id = item_url[2]
+            track = self.__yleapi.get_yle_track_info(program_id)
+            if not track:
+                return result
+            album = Album()
+            if track['album']:
+                album = Album(name=track['album']['name'],
+                              uri=track['album']['uri'],
+                              images=[track['album']['image']])
+                result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
+        elif uri.startswith('yle:series:'):
+            item_url = uri.split(':')
+            program_id = item_url[2]
+            tracks = self.__yleapi.get_yle_series_info(program_id)
+            for track in tracks:
+                album = models.Album(name=track['album']['name'], uri=track['album']['uri'])
+                result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
 
         return result

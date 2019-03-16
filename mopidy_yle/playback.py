@@ -10,13 +10,6 @@ import uritools
 
 logger = logging.getLogger(__name__)
 
-
-LIVERADIO = {
-    'radio1': 'mms://winstr.yle.fi/liveyleradio1?MSWMExt=.asf',
-    'puhe': 'mms://winstr.yle.fi/liveradiopuhe?MSWMExt=.asf',
-    'suomi': 'mms://winstr.yle.fi/liveradiosuomi?MSWMExt=.asf'
-}
-
 class YLEPlaybackProvider(backend.PlaybackProvider):
 
     def __init__(self, config, audio, backend):
@@ -26,9 +19,10 @@ class YLEPlaybackProvider(backend.PlaybackProvider):
 
     def translate_uri(self, uri):
         item_url = uri.split(':')
+        media_type = item_url[1]
         program_id = item_url[2]
-        if program_id in LIVERADIO:
-            uri = LIVERADIO[program_id]
+        if media_type == 'liveradio':
+            uri = 'mms://winstr.yle.fi/{0}?MSWMExt=.asf'.format(program_id)
             return uri
         media_id = item_url[3]
         self.__yleapi.yle_report(program_id, media_id)
