@@ -121,10 +121,12 @@ class YLELibraryProvider(backend.LibraryProvider):
                     uri_images = [Image(uri=image_url)]
             elif uri.startswith('yle:series:'):
                 item_url = uri.split(':')
-                id = item_url[2]
-                image_url = self.__yleapi.get_yle_image_url(program_id)
-                if image_url:
-                    uri_images = [Image(uri=image_url)]
+                series_id = item_url[2]
+                album = self.__yleapi.get_yle_album(series_id)
+                if album:
+                    image_url = self.__yleapi.get_yle_image_url(program_id)
+                    if image_url:
+                        uri_images = [Image(uri=image_url)]
             elif uri.startswith('yle:liveradio:'):
                 image_url = self.__yleapi.get_yle_logo()
                 if image_url:
