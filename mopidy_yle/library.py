@@ -99,7 +99,7 @@ class YLELibraryProvider(backend.LibraryProvider):
                         album_item = albums[tracks[item]['album']]
                         album = Album(name=album_item['name'],
                                       uri=album_item['uri'])
-                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], album=album))
+                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], album=album, comment=tracks[item]['comment']))
             for item in albums:
                 image = Image()
                 if albums[item]['image']:
@@ -144,21 +144,36 @@ class YLELibraryProvider(backend.LibraryProvider):
         elif uri.startswith('yle:track:'):
             item_url = uri.split(':')
             program_id = item_url[2]
-            track = self.__yleapi.get_yle_track_info(program_id)
+            track = self.__yleapi.get_yle_track(program_id)
             if not track:
                 return result
             album = Album()
             if track['album']:
-                album = Album(name=track['album']['name'],
-                              uri=track['album']['uri'],
-                              images=[track['album']['image']])
-                result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
+                album = self.__yleapi.get_yle_album(track['album'])
+                if album:
+                    album = Album(name=album['name'],
+                                  uri=album['uri'],
+                                  images=[album['image']])
+            result.append(models.Track(name=track['name'],
+                                       uri=track['uri'],
+                                       length=track['length'],
+                                       album=album,
+                                       comment=track['comment']))
         elif uri.startswith('yle:series:'):
             item_url = uri.split(':')
             program_id = item_url[2]
             tracks = self.__yleapi.get_yle_series_info(program_id)
             for track in tracks:
-                album = models.Album(name=track['album']['name'], uri=track['album']['uri'])
-                result.append(models.Track(name=track['name'], uri=track['uri'], length=track['length'], album=album))
-
+                album = Album()
+                if track['album']:
+                    album = self.__yleapi.get_yle_album(track['album'])
+                    if album:
+                        album = Album(name=album['name'],
+                                      uri=album['uri'],
+                                      images=[album['image']])
+                result.append(models.Track(name=track['name'],
+                                           uri=track['uri'],
+                                           length=track['length'],
+                                           album=album,
+                                           comment=track['comment']))
         return result

@@ -147,6 +147,11 @@ class YLEAPI:
                 except KeyError:
                     # Not for this language
                     continue
+                try:
+                    description = item['description'][self.__config['yle']['language']]
+                except KeyError:
+                    # Not for this language
+                    description = ''
                 if 'partOfSeries' in item:
                     album_id = self.fill_album(item)
                     if album_id:
@@ -164,6 +169,7 @@ class YLEAPI:
                                        'id': id,
                                        'uri': 'yle:track:{0}:{1}'.format(id, media_id),
                                        'album': album_id,
+                                       'comment': description,
                                        'length': length }
                         YLEAPI.__tracks[id] = tracks[id]
         return albums, tracks
@@ -189,18 +195,17 @@ class YLEAPI:
     def yle_report(self, program_id, media_id):
         self.get_yle_json('{0}?program_id={1}&media_id={2}&app_id={3}&app_key={4}'.format(self.yle_report_url, program_id, media_id, self.__config['yle']['app_id'], self.__config['yle']['app_key']))
 
-    def get_yle_track_info(self, program_id):
-        if YLEAPI.__tracks:
-            if program_id in YLEAPI.__tracks:
-                return YLEAPI.__tracks[program_id]
-
-        return {}
-
     def get_yle_track(self, track_id):
-        return YLEAPI.__tracks[track_id]
+        if YLEAPI.__tracks:
+            if track_id in YLEAPI.__tracks:
+                return YLEAPI.__tracks[track_id]
+        return None
 
     def get_yle_album(self, album_id):
-        return YLEAPI.__albums[album_id]
+        if YLEAPI.__albums:
+            if album_id in YLEAPI.__albums:
+                return YLEAPI.__albums[album_id]
+        return None
 
     def get_yle_series_info(self, series_id):
         if series_id in YLEAPI.__albums:
@@ -212,10 +217,7 @@ class YLEAPI:
         albums, tracks = self.get_yle_item(offset=0, series=series_id)
         for item in tracks:
             track = tracks[item]
-            album_id = track['album']
-            if album_id:
-                album = albums[album_id]
-                track['album'] = album
+            # Add tracks to album cache
             YLEAPI.__albums[series_id]['tracks'].append(track)
             tracklist.append(track)
         return tracklist

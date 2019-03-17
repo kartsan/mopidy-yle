@@ -6,7 +6,7 @@ import os
 from mopidy import config, ext
 from mopidy import httpclient
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 SORT_FIELDS = ['%s:%s' % (f, o) for o in ('asc', 'desc') for f in (
     'playcount.6h',
