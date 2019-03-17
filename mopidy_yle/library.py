@@ -91,6 +91,9 @@ class YLELibraryProvider(backend.LibraryProvider):
         albumlist = []
         for q in query:
             s = query[q][0]
+            uri = 'yle:search:{0}:{1}'.format(q, s)
+            if q == 'artist':
+                return SearchResult(tracks=[], albums=[], uri=uri)
             albums, tracks = self.__yleapi.get_yle_item(offset=0, query=s, limit=100)
             if q != 'album':
                 for item in tracks:
@@ -99,15 +102,11 @@ class YLELibraryProvider(backend.LibraryProvider):
                         album_item = albums[tracks[item]['album']]
                         album = Album(name=album_item['name'],
                                       uri=album_item['uri'])
-                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri'], album=album, comment=tracks[item]['comment']))
+                    tracklist.append(Track(name=tracks[item]['name'], uri=tracks[item]['uri']))
             for item in albums:
-                image = Image()
-                if albums[item]['image']:
-                    image = albums[item]['image']
-                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], images=[image]))
-                else:
-                    albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri']))
-        return SearchResult(tracks=tracklist, albums=albumlist, uri='yle:search:{0}'.format(query))
+                image = albums[item]['image']
+                albumlist.append(Album(name=albums[item]['name'], uri=albums[item]['uri'], images=[image]))
+        return SearchResult(tracks=tracklist, albums=albumlist, uri=uri)
     
     def get_images(self, uris):
         result = {}
