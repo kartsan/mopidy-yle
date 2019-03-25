@@ -52,17 +52,12 @@ class YLEAPI:
         result = []
         self.get_yle_categories()
         if id == 'root':
-            for item in YLEAPI.__categories:
-                if 'broader' not in item:
-                    if item['key'] == 'radio':
-                        id = item['id']
-                        break
+            id = YLEAPI.radioCategory
         if not id:
             return result
         for item in YLEAPI.__categories:
-            if 'broader' in item:
-                if item['broader']['id'] == id:
-                    result.append(item)
+            if item['broader_id'] == id:
+                result.append(item)
         return result
 
     # TODO: Move this out of API source
@@ -99,17 +94,14 @@ class YLEAPI:
         for item in categories:
             id = item['id']
             title = item['title'][self.__config['yle']['language']]
-            if 'broader' not in item:
-                result.append({'name': title,
-                               'id': id,
-                               'uri': 'yle:category:{0}'.format(id),
-                               'key': item['key']})
-            else:
-                result.append({'name': title,
-                               'id': id,
-                               'uri': 'yle:category:{0}'.format(id),
-                               'broader': item['broader'],
-                               'key': item['key']})
+            broader_id = None
+            if 'broader' in item:
+                broader_id = item['broader']['id']
+            result.append({'name': title,
+                           'id': id,
+                           'uri': 'yle:category:{0}'.format(id),
+                           'broader_id': broader_id,
+                           'key': item['key']})
         return result
 
     def fill_album(self, item):
