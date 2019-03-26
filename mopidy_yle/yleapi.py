@@ -93,6 +93,8 @@ class YLEAPI:
         result = []
         for item in categories:
             id = item['id']
+            if id in YLEAPI.unplayableCategories:
+                continue
             title = item['title'][self.__config['yle']['language']]
             broader_id = None
             if 'broader' in item:
