@@ -1,12 +1,9 @@
 from __future__ import unicode_literals
 
 import logging
-import re
 
 from mopidy import backend
 from .yleapi import YLEAPI
-
-import uritools
 
 logger = logging.getLogger(__name__)
 
